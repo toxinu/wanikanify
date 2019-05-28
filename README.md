@@ -1,6 +1,6 @@
 # Wanikanify
 
-Fixed version of unmaintained Wanikanify Chrome extension.
+New version of unmaintained Wanikanify Chrome extension.
 
 ## Download
 
