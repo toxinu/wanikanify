@@ -5,28 +5,28 @@
  */
 
 // cache keys
-var VOCAB_KEY      = "wanikanify_vocab";
-var SRS_KEY        = "wanikanify_srs";
-var API_KEY        = "wanikanify_apiKey";
+var VOCAB_KEY = "wanikanify_vocab";
+var SRS_KEY = "wanikanify_srs";
+var API_KEY = "wanikanify_apiKey";
 var CUST_VOCAB_KEY = "wanikanify_customvocab";
 var GOOG_VOCAB_KEY = "wanikanify_googleVocabKey";
 var GOOG_VOCAB_META_KEY = "wanikanify_googleVocab_meta";
-var AUDIO_KEY      = "wanikanify_audio";
+var AUDIO_KEY = "wanikanify_audio";
 
 // filter map
 var FILTER_MAP = {
-    "apprentice":  function(vocab) { return vocab.user_specific != null && vocab.user_specific.srs == "apprentice"; },
-    "guru":        function(vocab) { return vocab.user_specific != null && vocab.user_specific.srs == "guru"; },
-    "master":      function(vocab) { return vocab.user_specific != null && vocab.user_specific.srs == "master"; },
-    "enlighten":   function(vocab) { return vocab.user_specific != null && vocab.user_specific.srs == "enlighten"; },
-    "burned":      function(vocab) { return vocab.user_specific != null && vocab.user_specific.srs == "burned"; }
+    "apprentice": function (vocab) { return vocab.user_specific != null && vocab.user_specific.srs == "apprentice"; },
+    "guru": function (vocab) { return vocab.user_specific != null && vocab.user_specific.srs == "guru"; },
+    "master": function (vocab) { return vocab.user_specific != null && vocab.user_specific.srs == "master"; },
+    "enlighten": function (vocab) { return vocab.user_specific != null && vocab.user_specific.srs == "enlighten"; },
+    "burned": function (vocab) { return vocab.user_specific != null && vocab.user_specific.srs == "burned"; }
 };
 
 // ------------------------------------------------------------------------------------------------
 // The main program driver.
 // main : Object ->
 function main(cache_local) {
-    chrome.storage.sync.get([API_KEY, SRS_KEY, CUST_VOCAB_KEY, GOOG_VOCAB_META_KEY, AUDIO_KEY], function(cache_sync) {
+    chrome.storage.sync.get([API_KEY, SRS_KEY, CUST_VOCAB_KEY, GOOG_VOCAB_META_KEY, AUDIO_KEY], function (cache_sync) {
         var apiKey = cache_sync[API_KEY];
         if (!apiKey) {
             console.error("No API key provided! Please use the options page to specify your API key.");
@@ -112,7 +112,7 @@ function getDelim(meta_data_collection, spreadsheet_collection_key, sheet_name) 
     for (var i = 0; i < meta_data_collection.length; ++i) {
         if (meta_data_collection[i].spreadsheet_collection_key == spreadsheet_collection_key &&
             meta_data_collection[i].sheet_name == sheet_name) {
-                return meta_data_collection[i].delim;
+            return meta_data_collection[i].delim;
         }
     }
     console.error("Could not find key/sheet combo in metadata for: " + spreadsheet_collection_key + " " + sheet_name);
@@ -165,7 +165,7 @@ function importGoogleVocab(vocabDictionary, cache_local, cache_sync) {
 function getFilters(cache_sync) {
     var options = cache_sync[SRS_KEY];
     if (options) {
-        return filters = options.map(function(obj, index) {
+        return filters = options.map(function (obj, index) {
             return FILTER_MAP[obj];
         });
     }
@@ -195,7 +195,6 @@ function tryCacheOrWaniKani(cache_local, apiKey) {
     return waniKaniList;
 }
 
-// ------------------------------------------------------------------------------------------------
 // Returns a [Object] of vocabulary words from WaniKani
 // tryWaniKani : String, Boolean -> [Object]
 function tryWaniKani(apiKey, async) {
@@ -204,24 +203,16 @@ function tryWaniKani(apiKey, async) {
         return [];
     }
 
-    var info;
-    $.ajax({
-        async: async,
-        accepts: "application/json",
-        type: "GET",
-        url: "https://www.wanikani.com/api/v1.2/user/"+apiKey+"/vocabulary",
-    }).done(function (response) {
-        if (response.error) {
-            console.error("Vocabulary request failed.");
-            info = [];
-        } else {
-            info = response.requested_information.general;
+    var info = [];
+
+    chrome.runtime.sendMessage(
+        { title: 'tryWaniKani', apiKey: apiKey },
+        data => {
+            info = data.requested_information.general;
             cacheVocabList(info);
-        }
-    }).fail(function (response) {
-        console.error("Vocabulary request failed.");
-        info = [];
-    });
+
+            return info;
+        });
     return info;
 }
 
@@ -242,7 +233,7 @@ function cacheVocabList(vocabList) {
 // Filters the given [Object] of vocabulary words with the given list of filters.
 // filterVocabList : [Object], [Function] -> [Object]
 function filterVocabList(vocabList, filters) {
-    return vocabList.filter(function(obj) {
+    return vocabList.filter(function (obj) {
         for (var i = 0; i < filters.length; i++) {
             if (filters[i](obj)) {
                 return true;
@@ -257,7 +248,8 @@ function filterVocabList(vocabList, filters) {
 // toDictionary : [Object] -> Object
 function toDictionary(vocabList) {
     var vocab = {};
-    $.each(vocabList, function(index, value) {
+    console.log('here')
+    $.each(vocabList, function (index, value) {
         var character = value.character;
         var values = value.meaning.split(", ");
         for (var i = 0; i < values.length; i++) {
@@ -333,7 +325,7 @@ function getReading(wanikani_vocab_list, googleVocab, custom_vocab_list, vocab_t
             return wanikani_vocab_list[i].kana;
         }
     }
-    
+
     return vocab_to_find;
 }
 
@@ -387,7 +379,7 @@ function buildDictionaryCallback(
         gc = google_collections.collections;
     }
 
-    return function(str) {
+    return function (str) {
         var kanji = vocabDictionary[str.toLowerCase()];
         if (!kanji)
             return str;
@@ -408,8 +400,8 @@ function buildDictionaryCallback(
             }
         }
         else {
-                return '<span class="wanikanified" title="' + str + '" data-en="' + str + '" data-jp="' + kanji +
-                    '" onClick="var t = this.getAttribute(\'title\'); this.setAttribute(\'title\', this.innerHTML); this.innerHTML = t;">' + kanji + '<\/span>';
+            return '<span class="wanikanified" title="' + str + '" data-en="' + str + '" data-jp="' + kanji +
+                '" onClick="var t = this.getAttribute(\'title\'); this.setAttribute(\'title\', this.innerHTML); this.innerHTML = t;">' + kanji + '<\/span>';
         }
     }
 }

@@ -9,8 +9,8 @@ var executed = {}
 // Injects JS into the tab.
 // executeScripts : Object ->
 function executeScripts(tab) {
-    chrome.tabs.get(tab, function(details) {
-        chrome.storage.sync.get(['wanikanify_blackList'], function(items) {
+    chrome.tabs.get(tab, function (details) {
+        chrome.storage.sync.get(['wanikanify_blackList'], function (items) {
 
             function isBlackListed(details, items) {
                 var url = details.url;
@@ -19,7 +19,7 @@ function executeScripts(tab) {
                     if (blackList.length == 0) {
                         return false;
                     } else {
-                        var matcher = new RegExp($.map(items.wanikanify_blackList, function(val) { return '('+val+')';}).join('|'));
+                        var matcher = new RegExp($.map(items.wanikanify_blackList, function (val) { return '(' + val + ')'; }).join('|'));
                         return matcher.test(url);
                     }
                 }
@@ -28,9 +28,9 @@ function executeScripts(tab) {
 
 
             if (!isBlackListed(details, items)) {
-                chrome.tabs.executeScript(null, { file: "js/jquery.js" }, function() {
-                    chrome.tabs.executeScript(null, { file: "js/replaceText.js" }, function() {
-                        chrome.tabs.executeScript(null, { file: "js/content.js" }, function() {
+                chrome.tabs.executeScript(null, { file: "js/jquery.js" }, function () {
+                    chrome.tabs.executeScript(null, { file: "js/replaceText.js" }, function () {
+                        chrome.tabs.executeScript(null, { file: "js/content.js" }, function () {
                             executed[tab] = "jp";
                         });
                     });
@@ -65,7 +65,7 @@ function setLanguage(lang) {
     var inner = "data-" + lang;
     var title = "data-" + (lang == "jp" ? "en" : "jp");
     chrome.tabs.executeScript(null,
-        {code:"$(\".wanikanified\").each(function(index, value) { value.innerHTML = value.getAttribute('" + inner + "'); value.title = value.getAttribute('" + title + "'); })"});
+        { code: "$(\".wanikanified\").each(function(index, value) { value.innerHTML = value.getAttribute('" + inner + "'); value.title = value.getAttribute('" + title + "'); })" });
 }
 
 // Function for handling browser button clicks.
@@ -88,7 +88,7 @@ chrome.browserAction.onClicked.addListener(buttonClicked);
 chrome.tabs.onUpdated.addListener(clearStatus);
 
 // Add a listener for storage changes. We may need to disable "auto" running.
-chrome.storage.onChanged.addListener(function(changes, store) {
+chrome.storage.onChanged.addListener(function (changes, store) {
     var load = changes.wanikanify_runOn;
     if (load) {
         if (load.newValue == "onUpdated") {
@@ -100,18 +100,18 @@ chrome.storage.onChanged.addListener(function(changes, store) {
 });
 
 function toggleAutoLoad(info, tab) {
-    chrome.storage.sync.get("wanikanify_runOn", function(items) {
+    chrome.storage.sync.get("wanikanify_runOn", function (items) {
         var load = items.wanikanify_runOn;
         var flip = (load == "onUpdated") ? "onClick" : "onUpdated";
-        chrome.storage.sync.set({"wanikanify_runOn":flip}, function() {
+        chrome.storage.sync.set({ "wanikanify_runOn": flip }, function () {
             var title = (flip == "onClick") ? "Enable autoload" : "Disable autoload";
-            chrome.contextMenus.update("wanikanify_context_menu", {title:title});
+            chrome.contextMenus.update("wanikanify_context_menu", { title: title });
         });
     });
 }
 
 // Check the storage. We may already be in "auto" mode.
-chrome.storage.sync.get(["wanikanify_runOn","wanikanify_apiKey"], function(items) {
+chrome.storage.sync.get(["wanikanify_runOn", "wanikanify_apiKey"], function (items) {
     var context = {
         id: "wanikanify_context_menu",
         contexts: ["all"],
@@ -128,6 +128,30 @@ chrome.storage.sync.get(["wanikanify_runOn","wanikanify_apiKey"], function(items
     chrome.contextMenus.create(context);
 
     if (!items.wanikanify_apiKey) {
-        chrome.browserAction.setPopup({popup:"popup.html"});
+        chrome.browserAction.setPopup({ popup: "popup.html" });
+    }
+});
+
+// ------------------------------------------------------------------------------------------------
+chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
+    if (message.title === 'tryWaniKani') {
+        var apiKey = message.apiKey;
+
+        fetch("https://www.wanikani.com/api/v1.2/user/" + apiKey + "/vocabulary", {
+            method: 'get',
+            headers: { "Accept": "application/json" },
+        })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    console.error("Vocabulary request failed.");
+                }
+            })
+            .then(data => sendResponse(data))
+            .catch(function (err) {
+                console.error("Vocabulary request failed.");
+            });
+        return true;
     }
 });
