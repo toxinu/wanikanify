@@ -33,11 +33,11 @@ function main(cache_local) {
         }
         var vocabDictionary = {};
         importWaniKaniVocab(vocabDictionary, cache_sync, cache_local, apiKey);
-        console.log("Total entries from WaniKani: " + Object.keys(vocabDictionary).length);
+        console.debug("Total entries from WaniKani: " + Object.keys(vocabDictionary).length);
         importGoogleVocab(vocabDictionary, cache_local, cache_sync);
-        console.log("Total entries after Google Spreadsheets: " + Object.keys(vocabDictionary).length);
+        console.debug("Total entries after Google Spreadsheets: " + Object.keys(vocabDictionary).length);
         importCustomVocab(vocabDictionary, cache_local, cache_sync);
-        console.log("Total entries after CustomVocab: " + Object.keys(vocabDictionary).length);
+        console.debug("Total entries after CustomVocab: " + Object.keys(vocabDictionary).length);
         var dictionaryCallback = buildDictionaryCallback(
             cache_local,
             cache_sync,
@@ -248,7 +248,6 @@ function filterVocabList(vocabList, filters) {
 // toDictionary : [Object] -> Object
 function toDictionary(vocabList) {
     var vocab = {};
-    console.log('here')
     $.each(vocabList, function (index, value) {
         var character = value.character;
         var values = value.meaning.split(", ");
